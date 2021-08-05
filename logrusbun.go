@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"text/template"
 	"time"
 
@@ -151,8 +152,8 @@ func eventOperation(event *bun.QueryEvent) string {
 }
 
 // taken from bun
-func queryOperation(name []byte) string {
-	if idx := bytes.IndexByte(name, ' '); idx > 0 {
+func queryOperation(name string) string {
+	if idx := strings.Index(name, " "); idx > 0 {
 		name = name[:idx]
 	}
 	if len(name) > 16 {
