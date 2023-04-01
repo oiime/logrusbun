@@ -11,7 +11,7 @@ A simple hook for bun that enables logging with logrus
 ```golang
 db := bun.NewDB(...)
 log := logrus.New()
-db.AddQueryHook(NewQueryHook(QueryHookOptions{Logger: log}))
+db.AddQueryHook(logrusbun.NewQueryHook(logrusbun.QueryHookOptions{Logger: log}))
 
 ```
 
@@ -35,14 +35,14 @@ db.AddQueryHook(NewQueryHook(QueryHookOptions{Logger: log}))
 
 ### Kitchen sink example
 ```golang
-db.AddQueryHook(NewQueryHook(QueryHookOptions{
+db.AddQueryHook(logrusbun.NewQueryHook(logrusbun.QueryHookOptions{
     LogSlow:    time.Second,
     Logger:     log,
     QueryLevel: logrus.DebugLevel,
     ErrorLevel: logrus.ErrorLevel,
     SlowLevel:  logrus.WarnLevel,
     MessageTemplate: "{{.Operation}}[{{.Duration}}]: {{.Query}}",
-    ErrorTemplate: "{{.Operation}}[{{.Duration}}]: {{.Query}}: {{.Error}",
+    ErrorTemplate: "{{.Operation}}[{{.Duration}}]: {{.Query}}: {{.Error}}",
 }))
 
 ```
