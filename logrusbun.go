@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 	"text/template"
 	"time"
@@ -12,6 +13,43 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/bun"
 )
+
+type Option func(hook *QueryHook)
+
+// WithEnabled enables/disables this hook
+func WithEnabled(on bool) Option {
+	return func(h *QueryHook) {
+		h.enabled = on
+	}
+}
+
+// WithVerbose configures the hook to log all queries
+// (by default, only failed queries are logged)
+func WithVerbose(on bool) Option {
+	return func(h *QueryHook) {
+		h.verbose = on
+	}
+}
+
+// FromEnv configures the hook using the environment variable value.
+// For example, WithEnv("BUNDEBUG"):
+//   - BUNDEBUG=0 - disables the hook.
+//   - BUNDEBUG=1 - enables the hook.
+//   - BUNDEBUG=2 - enables the hook and verbose mode.
+func FromEnv(keys ...string) Option {
+	if len(keys) == 0 {
+		keys = []string{"BUNDEBUG"}
+	}
+	return func(h *QueryHook) {
+		for _, key := range keys {
+			if env, ok := os.LookupEnv(key); ok {
+				h.enabled = env != "" && env != "0"
+				h.verbose = env == "2"
+				break
+			}
+		}
+	}
+}
 
 // QueryHookOptions logging options
 type QueryHookOptions struct {
@@ -26,6 +64,8 @@ type QueryHookOptions struct {
 
 // QueryHook wraps query hook
 type QueryHook struct {
+	enabled         bool
+	verbose         bool
 	opts            QueryHookOptions
 	errorTemplate   *template.Template
 	messageTemplate *template.Template
@@ -72,6 +112,16 @@ func (h *QueryHook) BeforeQuery(ctx context.Context, event *bun.QueryEvent) cont
 
 // AfterQuery convert a bun QueryEvent into a logrus message
 func (h *QueryHook) AfterQuery(ctx context.Context, event *bun.QueryEvent) {
+	if !h.enabled {
+		return
+	}
+
+	if !h.verbose {
+		switch event.Err {
+		case nil, sql.ErrNoRows, sql.ErrTxDone:
+			return
+		}
+	}
 	var level logrus.Level
 	var isError bool
 	var msg bytes.Buffer
