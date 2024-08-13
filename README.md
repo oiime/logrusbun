@@ -52,7 +52,7 @@ db.AddQueryHook(logrusbun.NewQueryHook(
 
 ### Kitchen sink example
 ```golang
-db.AddQueryHook(NewQueryHook(QueryHookOptions{
+db.AddQueryHook(NewQueryHook(WithQueryHookOptions(QueryHookOptions{
     LogSlow:    time.Second,
     Logger:     log,
     QueryLevel: logrus.DebugLevel,
@@ -60,6 +60,6 @@ db.AddQueryHook(NewQueryHook(QueryHookOptions{
     SlowLevel:  logrus.WarnLevel,
     MessageTemplate: "{{.Operation}}[{{.Duration}}]: {{.Query}}",
     ErrorTemplate: "{{.Operation}}[{{.Duration}}]: {{.Query}}: {{.Error}}",
-}))
+})))
 
 ```
