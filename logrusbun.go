@@ -51,6 +51,32 @@ func FromEnv(keys ...string) Option {
 	}
 }
 
+// WithQueryHookOptions allows setting the initial logging options
+// for logrus
+func WithQueryHookOptions(opts QueryHookOptions) Option {
+	return func(h *QueryHook) {
+		if opts.ErrorTemplate == "" {
+			opts.ErrorTemplate = "{{.Operation}}[{{.Duration}}]: {{.Query}}: {{.Error}}"
+		}
+		if opts.MessageTemplate == "" {
+			opts.MessageTemplate = "{{.Operation}}[{{.Duration}}]: {{.Query}}"
+		}
+		h.opts = &opts
+		errorTemplate, err := template.New("ErrorTemplate").Parse(h.opts.ErrorTemplate)
+		if err != nil {
+			panic(err)
+		}
+		messageTemplate, err := template.New("MessageTemplate").Parse(h.opts.MessageTemplate)
+		if err != nil {
+			panic(err)
+		}
+
+		h.errorTemplate = errorTemplate
+		h.messageTemplate = messageTemplate
+		h.opts = &opts
+	}
+}
+
 // QueryHookOptions logging options
 type QueryHookOptions struct {
 	LogSlow         time.Duration
@@ -66,7 +92,7 @@ type QueryHookOptions struct {
 type QueryHook struct {
 	enabled         bool
 	verbose         bool
-	opts            QueryHookOptions
+	opts            *QueryHookOptions
 	errorTemplate   *template.Template
 	messageTemplate *template.Template
 }
@@ -81,27 +107,17 @@ type LogEntryVars struct {
 }
 
 // NewQueryHook returns new instance
-func NewQueryHook(opts QueryHookOptions) *QueryHook {
+func NewQueryHook(options ...Option) *QueryHook {
 	h := new(QueryHook)
 
-	if opts.ErrorTemplate == "" {
-		opts.ErrorTemplate = "{{.Operation}}[{{.Duration}}]: {{.Query}}: {{.Error}}"
-	}
-	if opts.MessageTemplate == "" {
-		opts.MessageTemplate = "{{.Operation}}[{{.Duration}}]: {{.Query}}"
-	}
-	h.opts = opts
-	errorTemplate, err := template.New("ErrorTemplate").Parse(h.opts.ErrorTemplate)
-	if err != nil {
-		panic(err)
-	}
-	messageTemplate, err := template.New("MessageTemplate").Parse(h.opts.MessageTemplate)
-	if err != nil {
-		panic(err)
+	for _, opt := range options {
+		opt(h)
 	}
 
-	h.errorTemplate = errorTemplate
-	h.messageTemplate = messageTemplate
+	if h.opts == nil {
+		panic("logrus settings not set.")
+	}
+
 	return h
 }
 
