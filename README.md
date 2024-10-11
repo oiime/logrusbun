@@ -11,8 +11,25 @@ A simple hook for bun that enables logging with logrus
 ```golang
 db := bun.NewDB(...)
 log := logrus.New()
-db.AddQueryHook(logrusbun.NewQueryHook(logrusbun.QueryHookOptions{Logger: log}))
+db.AddQueryHook(logrusbun.NewQueryHook(logrusbun.WithQueryHookOptions(QueryHookOptions{Logger: log})))
 
+```
+
+Similar to bundebug, additional logging setup is available:
+```golang
+db := bun.NewDB(...)
+log := logrus.New()
+db.AddQueryHook(logrusbun.NewQueryHook(
+    // disable the hook
+    logrusbun.WithEnabled(false),
+
+    // BUNDEBUG=1 logs failed queries
+    // BUNDEBUG=2 logs all queries
+    logrusbun.FromEnv("BUNDEBUG"),
+    	
+    // finally set logrus settings
+    logrusbun.WithQueryHookOptions(QueryHookOptions{Logger: log}),
+))
 ```
 
 ### QueryHookOptions
@@ -35,7 +52,7 @@ db.AddQueryHook(logrusbun.NewQueryHook(logrusbun.QueryHookOptions{Logger: log}))
 
 ### Kitchen sink example
 ```golang
-db.AddQueryHook(NewQueryHook(QueryHookOptions{
+db.AddQueryHook(NewQueryHook(WithQueryHookOptions(QueryHookOptions{
     LogSlow:    time.Second,
     Logger:     log,
     QueryLevel: logrus.DebugLevel,
@@ -43,6 +60,6 @@ db.AddQueryHook(NewQueryHook(QueryHookOptions{
     SlowLevel:  logrus.WarnLevel,
     MessageTemplate: "{{.Operation}}[{{.Duration}}]: {{.Query}}",
     ErrorTemplate: "{{.Operation}}[{{.Duration}}]: {{.Query}}: {{.Error}}",
-}))
+})))
 
 ```
