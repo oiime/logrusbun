@@ -200,7 +200,7 @@ func (h *QueryHook) AfterQuery(ctx context.Context, event *bun.QueryEvent) {
 
 // taken from bun
 func eventOperation(event *bun.QueryEvent) string {
-	switch event.QueryAppender.(type) {
+	switch event.IQuery.(type) {
 	case *bun.SelectQuery:
 		return "SELECT"
 	case *bun.InsertQuery:
